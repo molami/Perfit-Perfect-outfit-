@@ -87,6 +87,7 @@ export default function Styling() {
   const [stepMode, setStepMode] = useState<2 | 3 | 4>(3);
   const [centers, setCenters] = useState<number[]>([]);
   const [rowPinned, setRowPinned] = useState<boolean[]>([]);
+  const [pinnedItems, setPinnedItems] = useState<(ClosetItem | null)[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveOccasion, setSaveOccasion] = useState<string>("Casual");
   const [saveDate, setSaveDate] = useState<string>(new Date().toISOString().split("T")[0]);
@@ -151,9 +152,11 @@ export default function Styling() {
 
   // Reset row controls on row change
   useEffect(() => {
-    setCenters(rows.map(() => 0));
-    setRowPinned(rows.map(() => false));
-  }, [rows]);
+  setCenters(rows.map(() => 0));
+  setRowPinned(rows.map(() => false));
+  setPinnedItems(rows.map(() => null));
+}, [rows]);
+
 
   // Derive step mode from prefilled outfit
   useEffect(() => {
@@ -212,12 +215,26 @@ export default function Styling() {
     });
   };
 
-  const togglePinCenter = (rowIdx: number) =>
-    setRowPinned((prev) => {
-      const copy = [...prev];
-      copy[rowIdx] = !copy[rowIdx];
-      return copy;
-    });
+  const togglePinCenter = (rowIdx: number) => {
+  setRowPinned((prev) => {
+    const copy = [...prev];
+    copy[rowIdx] = !copy[rowIdx];
+    return copy;
+  });
+
+  setPinnedItems((prev) => {
+    const copy = [...prev];
+    const row = rows[rowIdx];
+    if (!row?.length) return copy;
+
+    const centerItem = row[centers[rowIdx] % row.length];
+
+    // If already pinned → unpin, else store the item
+    copy[rowIdx] = prev[rowIdx] ? null : centerItem;
+    return copy;
+  });
+};
+
 
   const visibleTriplet = (rowIdx: number): (ClosetItem | null)[] => {
     const row = rows[rowIdx];
@@ -231,8 +248,11 @@ export default function Styling() {
   // Save outfit
   const handleConfirmSave = () => {
     const picked = rows
-      .map((row, i) => (row.length ? row[centers[i] % row.length] : null))
-      .filter(Boolean) as ClosetItem[];
+  .map((row, i) =>
+    pinnedItems[i] ?? (row.length ? row[centers[i] % row.length] : null)
+  )
+  .filter(Boolean) as ClosetItem[];
+
 
     if (!picked.length) {
       alert("No items selected to save!");
