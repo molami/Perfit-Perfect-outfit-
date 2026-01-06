@@ -71,9 +71,9 @@ function useViewport() {
     window.addEventListener("resize", onResize, { passive: true });
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  const isXS = w <= 360;        // very small phones
-  const isSM = w <= 420;        // small phones
-  const cols = isXS ? 2 : 3;    // switch grid columns
+  const isXS = w < 340;      // extremely small phones only
+  const isSM = w < 380;     // small phones
+  const cols = w < 340 ? 2 : 3; // switch grid columns
   return { width: w, isXS, isSM, cols };
 }
 
